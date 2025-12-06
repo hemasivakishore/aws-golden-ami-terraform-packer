@@ -1,9 +1,9 @@
 resource "aws_vpc" "vpc" {
-    cidr_block = var.cidr_block
+    cidr_block = local.cidr_block
     enable_dns_hostnames = true
     enable_dns_support  = true
     tags = {
-        Name = var.vpc_name
+        Name = local.vpc_name
         Owner = local.owner
         Project = local.project
         environment = local.environment
@@ -16,7 +16,7 @@ resource "aws_vpc" "vpc" {
 resource "aws_internet_gateway" "igw" {
     vpc_id = aws_vpc.vpc.id
     tags = {
-        Name = var.igw_name
+        Name = local.igw_name
         Owner = local.owner
         Project = local.project
         environment = local.environment
