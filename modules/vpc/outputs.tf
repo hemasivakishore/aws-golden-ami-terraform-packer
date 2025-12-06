@@ -19,7 +19,7 @@ output "private_route_table_id" {
 }
 
 output "sg_id" {
-    value = aws_security_group.allow-all.i
+    value = aws_security_group.allow-all.id
 }
 
 output "natgw" {

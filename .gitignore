@@ -36,3 +36,10 @@ override.tf.json
 # Ignore CLI configuration files
 .terraformrc
 terraform.rc
+
+terraform init && terraform validate && terraform plan --var="vpc_name=golden-vpc" \
+--var="igw_name=gonden-igw" --var="cidr_block=192.168.0.0/16" --var="owner=kishore" \
+--var="project=aws-golden" --var="environment=dev" --var="private_subnet_name=private-subnet" \
+--var="public-subnet-name=public-subnet" --var="public-subnet-cidr=192.168.2.0/24" \
+--var="availability_zone=us-east-1b" --var="private-subnet-cidr=192.168.1.0/24" \
+--var="availability_zone=us-east-1a" --var="private-route-table-name=private-route-table"
