@@ -9,4 +9,6 @@ locals {
     private-subnet-cidr = var.private-subnet-cidr
     availability_zone = var.availability_zone
     private-route-table-name = var.private-route-table-name
+    ports_in = [443, 80, 22, 3389, 445, 8080]
+    ports_out = [80, 443, 22, 3389, 445, 8080]
 }

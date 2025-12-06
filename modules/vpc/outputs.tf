@@ -13,3 +13,11 @@ output "environment" {
 output "private_subnet_id" {
     value = aws_subnet.private-subnet.id
 }
+
+output "private_route_table_id" {
+    value = aws_route_table.private-route-table.id
+}
+
+output "sg_id" {
+    value = aws_security_group.allow-all.i
+}
