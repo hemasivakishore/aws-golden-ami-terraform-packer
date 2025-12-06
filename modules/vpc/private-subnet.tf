@@ -1,6 +1,6 @@
-resource "aws_subnet" "private-subnet" {
+resource "aws_subnet" "private_subnet" {
     vpc_id = aws_vpc.vpc.id
-    cidr_block = local.private-subnet-cidr
+    cidr_block = local.private_subnet_cidr
     availability_zone = local.availability_zone
     tags = {
         Name = local.private_subnet_name

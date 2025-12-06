@@ -1,5 +1,5 @@
-resource "aws_security_group" "allow-all" {
-    name = "${var.vpc_name}-sg-allow-all"
+resource "aws_security_group" "allow_all" {
+    name = "${var.vpc_name}_sg_allow_all"
     description = "Allow all inbound rules and traffic"
     vpc_id = aws_vpc.vpc.id
 
@@ -30,7 +30,7 @@ resource "aws_security_group" "allow-all" {
         cidr_blocks = ["0.0.0.0/0"]
     }
     tags = {
-        Name = "${var.vpc_name}-sg-allow-all"
+        Name = "${var.vpc_name}_sg_allow_all"
         environment = local.environment
         project = local.project
     }

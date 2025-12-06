@@ -1,6 +1,7 @@
 # Local .terraform directories
 .terraform/
 .terraform.lock.hcl
+implementation/
 
 # .tfstate files
 *.tfstate
@@ -39,7 +40,8 @@ terraform.rc
 
 terraform init && terraform validate && terraform plan --var="vpc_name=golden-vpc" \
 --var="igw_name=gonden-igw" --var="cidr_block=192.168.0.0/16" --var="owner=kishore" \
---var="project=aws-golden" --var="environment=dev" --var="private_subnet_name=private-subnet" \
---var="public-subnet-name=public-subnet" --var="public-subnet-cidr=192.168.2.0/24" \
---var="availability_zone=us-east-1b" --var="private-subnet-cidr=192.168.1.0/24" \
---var="availability_zone=us-east-1a" --var="private-route-table-name=private-route-table"
+--var="project=aws-golden" --var="environment=dev" --var="private_subnet_name=private_subnet" \
+--var="public_subnet_name=public_subnet" --var="public_subnet_cidr=192.168.2.0/24" \
+--var="availability_zone=us-east-1b" --var="private_subnet_cidr=192.168.1.0/24" \
+--var="availability_zone=us-east-1a" --var="private_route_table_name=private_route_table" \
+--var="ami=ami-0ecb62995f68bb549" --var="aws_region=us-east-1" --var="instance_type=t2.micro" --var="key_name=vhsk"

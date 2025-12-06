@@ -1,11 +1,11 @@
-resource "aws_eip" "natgw-eip" {
+resource "aws_eip" "natgw_eip" {
     domain = "vpc"
 }
 
-resource "aws_nat_gateway" "natgw-nat-gateway" {
-  allocation_id = aws_eip.natgw-eip.id
-  subnet_id = aws_subnet.public-subnet.id
+resource "aws_nat_gateway" "natgw_nat_gateway" {
+  allocation_id = aws_eip.natgw_eip.id
+  subnet_id = aws_subnet.public_subnet.id
   tags = {
-    name = lower("${var.vpc_name}-natgw")
+    name = lower("${var.vpc_name}_natgw")
   }
 }

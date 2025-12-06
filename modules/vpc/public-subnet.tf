@@ -1,9 +1,9 @@
-resource "aws_subnet" "public-subnet" {
+resource "aws_subnet" "public_subnet" {
     vpc_id = aws_vpc.vpc.id
-    cidr_block = local.public-subnet-cidr
+    cidr_block = local.public_subnet_cidr
     availability_zone = local.availability_zone
     tags = {
-        Name = local.public-subnet-name
+        Name = local.public_subnet_name
         Owner = local.owner
         Project = local.project
         environment = local.environment
