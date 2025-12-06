@@ -49,4 +49,7 @@ variable "private-route-table-name" {
 }
 
 variable "service_ports" {
+    type        = list(number)
+    description = "List of TCP ports to allow in the security group"
+    default     = [22, 80, 443, 3389, 445, 8080]
 }
