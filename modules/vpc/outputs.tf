@@ -21,3 +21,11 @@ output "private_route_table_id" {
 output "sg_id" {
     value = aws_security_group.allow-all.i
 }
+
+output "natgw" {
+    value = aws_nat_gateway.natgw-nat-gateway.id
+}
+
+output "eip" {
+    value = aws_eip.natgw-eip.public_ip
+}

@@ -16,3 +16,10 @@ resource "aws_route_table_association" "private-route-table-association" {
     subnet_id = aws_subnet.private-subnet.id
     route_table_id = aws_route_table.private-route-table.id
 }
+
+resource "aws_route" "nat_rule" {
+    route_table_id = aws_route_table.private-route-table.id
+    destination_cidr_block = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.natgw-nat-gateway.id
+    depends_on = [ aws_nat_gateway.natgw-nat-gateway ]
+}

@@ -30,6 +30,14 @@ variable "private-subnet-cidr" {
     type = string
     description = "Private Subnet CIDR Range"
 }
+variable "public_subnet_name" {
+    type = string
+    description = "public Subnet Name"
+}
+variable "public-subnet-cidr" {
+    type = string
+    description = "public Subnet CIDR Range"
+}
 variable "availability_zone" {
     type = string
     description = "Private Subnet Availability Zone"
