@@ -3,7 +3,7 @@ resource "aws_subnet" "public-subnet" {
     cidr_block = local.public-subnet-cidr
     availability_zone = local.availability_zone
     tags = {
-        Name = local.public_subnet_name
+        Name = local.public-subnet-name
         Owner = local.owner
         Project = local.project
         environment = local.environment
