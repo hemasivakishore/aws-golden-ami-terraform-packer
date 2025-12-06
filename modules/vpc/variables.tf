@@ -34,3 +34,8 @@ variable "availability_zone" {
     type = string
     description = "Private Subnet Availability Zone"
 }
+
+variable "private-route-table-name" {
+    type = string
+    description = "Private Route Table Name"
+}
