@@ -41,6 +41,4 @@ variable "private-route-table-name" {
 }
 
 variable "service_ports" {
-    type = string
-    description = "Service Ports"
 }
