@@ -26,15 +26,15 @@ variable "private_subnet_name" {
     type = string
     description = "Private Subnet Name"
 }
-variable "private-subnet-cidr" {
+variable "private_subnet_cidr" {
     type = string
     description = "Private Subnet CIDR Range"
 }
-variable "public-subnet-name" {
+variable "public_subnet_name" {
     type = string
     description = "public Subnet Name"
 }
-variable "public-subnet-cidr" {
+variable "public_subnet_cidr" {
     type = string
     description = "public Subnet CIDR Range"
 }
@@ -43,7 +43,7 @@ variable "availability_zone" {
     description = "Private Subnet Availability Zone"
 }
 
-variable "private-route-table-name" {
+variable "private_route_table_name" {
     type = string
     description = "Private Route Table Name"
 }
