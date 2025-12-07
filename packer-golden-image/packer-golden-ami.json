@@ -7,29 +7,25 @@
         "vpc_id": "",
         "subnet_id": ""
     },
-    "_comment1": "packer build packer-golden-ami.json",
-    "_comment2": "packer build --var-file variables-packer-golden-ami.json",
     "builders": [
         {
             "type": "amazon-ebs",
+            "ami_name": "golden-ami-{{timestamp}}",
             "region": "{{user `region`}}",
-            "source_ami_filter": {
-                "filters": {
-                    "virtualization-type": "hvm",
-                    "name": "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20251022",
-                    "root-device-type": "ebs"
-                },
-                "owners": ["099720109477"],
-                "most_recent": true
-            },
+
+            "source_ami": "{{user `source_ami`}}",
             "instance_type": "{{user `instance_type`}}",
-            "spot_instance_types": "t2.micro",
             "ssh_username": "ubuntu",
-            "ami_name": "GOLDEN-AMI-{{isotime | clean_resource_name}}",
+
             "vpc_id": "{{user `vpc_id`}}",
             "subnet_id": "{{user `subnet_id`}}",
+            "associate_public_ip_address": true,
+
             "tags": {
-                "Name": "Golden-AMI-{{isotime | clean_resource_name}}"
+                "Name": "golden-ami-{{timestamp}}",
+                "Owner": "VHSKISHORE",
+                "Project": "aws-golden-ami",
+                "Environment": "dev"
             }
         }
     ],
