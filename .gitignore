@@ -2,6 +2,7 @@
 .terraform/
 .terraform.lock.hcl
 implementation/
+packer/
 
 # .tfstate files
 *.tfstate
