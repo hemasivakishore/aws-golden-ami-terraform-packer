@@ -23,7 +23,7 @@
 
             "tags": {
                 "Name": "golden-ami-{{timestamp}}",
-                "Owner": "VHSKISHORE",
+                "Owner": "VHS-KISHORE",
                 "Project": "aws-golden-ami",
                 "Environment": "dev"
             }
