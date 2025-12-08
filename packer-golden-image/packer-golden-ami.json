@@ -34,7 +34,7 @@
             "type": "shell",
             "inline": [
                 "sudo apt update",
-                "sudo apt install -y nginx net-tools unzip iputils jq"
+                "sudo apt install -y nginx net-tools unzip iputils-ping jq"
             ]
         }
     ]
