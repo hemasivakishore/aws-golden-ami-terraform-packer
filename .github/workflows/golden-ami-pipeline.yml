@@ -30,36 +30,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      # - name: Build Golden AMI with Packer
-      #   working-directory: packer-golden-image
-      #   run: |
-      #     packer validate -var-file=variables-packer-golden-ami.json packer-golden-ami.json
-      #     packer build -var-file=variables-packer-golden-ami.json packer-golden-ami.json
-      
-      # - name: Trivy Scan AMI
-      #   run: |
-      #     AMI_ID=$(aws ec2 describe-images --owners self --filters "Name=tag:Project,Values=aws-golden-ami" "Name=name,Values=golden-ami-*" --query "sort_by(Images, &CreationDate)[-1].ImageId" --region us-east-1 --output text)
-      #     echo "AMI ID is: $AMI_ID"
-      #     AMI_MESSAGE="AMI ID is $AMI_ID and created on date $(date)"
-      #     # curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"${AMI_MESSAGE//$'\n'/\\n}\"}" "${{vars.SLACK_WEBHOOK_URL}}"
-      #     # echo -e "From: ${{vars.FROM}}\nTo: ${{vars.TO}}\nSubject: ${{vars.SUBJECT}}\n\n${AMI_MESSAGE}" | msmtp ${{vars.TO}}
-      #     echo $AMI_MESSAGE
-      #     trivy aws --service ec2 \
-      #       --resource-id $AMI_ID \
-      #       --format json --output trivy-ami.json
-      #     aws s3 cp trivy-ami.json s3://aws-golden-ami-terraform-packer/trivy-ami.json
-      #     # curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"${AMI_MESSAGE//$'\n'/\\n}\"}" "${{vars.SLACK_WEBHOOK_URL}}"
-      #     # echo -e "From: ${{vars.FROM}}\nTo: ${{vars.TO}}\nSubject: ${{vars.SUBJECT}}\n\n${AMI_MESSAGE}" | msmtp ${{vars.TO}}
-
-      # - name: Creating EC2 Instance with Golden AMI
-      #   working-directory: Infrastructure
-      #   run: |
-      #       terraform init
-      #       terraform validate
-      #       terraform fmt -check
-      #       terraform plan -out aws-golden-ami-plan-github-actions.tfplan
-      #       terraform apply --var="ami=$AMI_ID" aws-golden-ami-plan-github-actions.tfplan
-
       - name: Locate latest AMI and export AMI_ID
         run: |
           set -e
@@ -81,31 +51,17 @@ jobs:
           # Persist for next steps
           echo "AMI_ID=$AMI_ID" >> $GITHUB_ENV
       
-      - name: Download Trivy DB
-        run: trivy --download-db-only
-
-      - name: Scan AMI
+      - name: Trivy Scan AMI
         run: |
+          set -e
+          AWS_REGION=us-east-1
+          export AWS_REGION AWS_DEFAULT_REGION=$AWS_REGION
+
+          echo "Scanning AMI_ID=$AMI_ID with Trivy"
           trivy vm --scanners vuln ami:$AMI_ID \
-          --aws-region="$AWS_REGION" \
-          --timeout 60m \
-          --format table \
-          --output trivy-ami-github-actions.txt
-
-
-
-      # - name: Trivy Scan AMI
-      #   run: |
-      #     set -e
-      #     AWS_REGION=us-east-1
-      #     export AWS_REGION AWS_DEFAULT_REGION=$AWS_REGION
-
-      #     echo "Scanning AMI_ID=$AMI_ID with Trivy"
-      #     trivy vm --scanners vuln ami:$AMI_ID \
-      #       --skip-java-db-update \
-      #       --aws-region="$AWS_REGION" \
-      #       --timeout 60m \
-      #       --format table --output trivy-ami-github-actions.txt
+            --aws-region="$AWS_REGION" \
+            --timeout 60m \
+            --format table --output trivy-ami-github-actions.txt
       
       - name: Upload Trivy Scan Report to S3
         run: |
@@ -123,13 +79,14 @@ jobs:
         run: |
             set -euxo pipefail
             echo "Using AMI_ID=$AMI_ID for Terraform"
-            terraform init
-            terraform validate
-            terraform fmt -check
-            terraform plan -var="ami=$AMI_ID" -out aws-golden-ami-plan-github-actions.tfplan
-            aws s3 cp aws-golden-ami-plan-github-actions.tfplan s3://aws-golden-ami-terraform-packer/aws-golden-ami-plan-github-actions.tfplan
-            terraform apply --auto-approve aws-golden-ami-plan-github-actions.tfplan
-
+            # terraform init
+            # terraform validate
+            # terraform fmt -check
+            # terraform plan -var="ami=$AMI_ID" -out aws-golden-ami-plan-github-actions.tfplan
+            # aws s3 cp aws-golden-ami-plan-github-actions.tfplan s3://aws-golden-ami-terraform-packer/aws-golden-ami-plan-github-actions.tfplan
+            # terraform apply --auto-approve aws-golden-ami-plan-github-actions.tfplan
+            terraform destroy -auto-approve -var="ami=$AMI_ID"
+            
       - name: Scanning EC2 with AWS Inspector
         run: |
           set -e
