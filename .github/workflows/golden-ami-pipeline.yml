@@ -89,7 +89,7 @@ jobs:
 
           echo "Scanning AMI_ID=$AMI_ID with Trivy"
           trivy vm --scanners vuln ami:$AMI_ID \
-            --skip-java-db \
+            --skip-java-db-update \
             --aws-region="$AWS_REGION" \
             --timeout 60m \
             --format table --output trivy-ami-github-actions.txt
