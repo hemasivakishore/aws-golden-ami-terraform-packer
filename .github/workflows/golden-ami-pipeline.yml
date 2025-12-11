@@ -60,13 +60,6 @@ jobs:
       #       terraform plan -out aws-golden-ami-plan-github-actions.tfplan
       #       terraform apply --var="ami=$AMI_ID" aws-golden-ami-plan-github-actions.tfplan
 
-
-      # - name: Build Golden AMI with Packer
-      #   working-directory: packer-golden-image
-      #   run: |
-      #     packer validate -var-file=variables-packer-golden-ami.json packer-golden-ami.json
-      #     packer build -var-file=variables-packer-golden-ami.json packer-golden-ami.json
-
       - name: Locate latest AMI and export AMI_ID
         run: |
           set -e
@@ -88,74 +81,25 @@ jobs:
           # Persist for next steps
           echo "AMI_ID=$AMI_ID" >> $GITHUB_ENV
 
-      # - name: Trivy scan (launch temp EC2 from AMI, scan instance, upload report)
-      #   run: |
-      #     set -euo pipefail
-      #     AWS_REGION=us-east-1
-      #     export AWS_REGION AWS_DEFAULT_REGION=$AWS_REGION
+      - name: Trivy Scan AMI
+        run: |
+          set -e
+          AWS_REGION=us-east-1
+          export AWS_REGION AWS_DEFAULT_REGION=$AWS_REGION
 
-      #     # read AMI_ID from env injected previously
-      #     echo "Using AMI_ID: $AMI_ID"
-      #     if [ -z "$AMI_ID" ]; then
-      #       echo "AMI_ID is empty - aborting"
-      #       exit 1
-      #     fi
+          echo "Scanning AMI_ID=$AMI_ID with Trivy"
+          trivy vm --scanners vuln ami:$AMI_ID \
+            --aws-region="$AWS_REGION" \
+            --format table --output trivy-ami-github-actions.txt
+      
+      - name: Upload Trivy Scan Report to S3
+        run: |
+          set -e
+          AWS_REGION=us-east-1
+          export AWS_REGION AWS_DEFAULT_REGION=$AWS_REGION
 
-      #     # Configure values you must adjust if your environment differs:
-      #     SUBNET_ID="subnet-0b6ac345bd9095620"                       # <-- change to your public subnet with internet access
-      #     SECURITY_GROUP_IDS="sg-02550c1e1b39e5ed2"                  # optional: add sg ids if required (space separated)
-      #     INSTANCE_TYPE="t3.micro"
-      #     TMP_TAG="golden-ami-temp-scan"
+          aws s3 cp trivy-ami-github-actions.txt s3://aws-golden-ami-terraform-packer/trivy-ami-github-actions.txt
 
-      #     # Launch temp instance (capture instance id)
-      #     echo "Launching temporary instance from AMI $AMI_ID..."
-      #     RUN_OUT=$(aws ec2 run-instances \
-      #       --image-id "$AMI_ID" \
-      #       --count 1 \
-      #       --instance-type "$INSTANCE_TYPE" \
-      #       --subnet-id "$SUBNET_ID" \
-      #       $( [ -n "$SECURITY_GROUP_IDS" ] && printf -- '--security-group-ids %s' "$SECURITY_GROUP_IDS" ) \
-      #       --associate-public-ip-address \
-      #       --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=${TMP_TAG}},{Key=Project,Value=aws-golden-ami}]" \
-      #       --query "Instances[0].InstanceId" --output text --region "$AWS_REGION")
-
-      #     INSTANCE_ID="$RUN_OUT"
-      #     echo "Launched instance: $INSTANCE_ID"
-
-      #     # Ensure termination happens on exit
-      #     cleanup() {
-      #       if [ -n "${INSTANCE_ID:-}" ]; then
-      #         echo "Terminating temp instance $INSTANCE_ID..."
-      #         aws ec2 terminate-instances --instance-ids "$INSTANCE_ID" --region "$AWS_REGION" || true
-      #         aws ec2 wait instance-terminated --instance-ids "$INSTANCE_ID" --region "$AWS_REGION" || true
-      #         echo "Terminated."
-      #       fi
-      #     }
-      #     trap cleanup EXIT
-
-      #     # Wait for instance to reach running
-      #     aws ec2 wait instance-running --instance-ids "$INSTANCE_ID" --region "$AWS_REGION"
-      #     echo "Instance running. Waiting 30s for cloud-init..."
-      #     sleep 30
-
-      #     # TRIVY: scan the instance (trivy aws expects instance id)
-      #     TRIVY_OUTPUT="trivy-ec2-${INSTANCE_ID}-$(date +%F_%T).json"
-      #     echo "Running trivy scan against instance $INSTANCE_ID..."
-      #     trivy aws --service ec2 --resource-id "$INSTANCE_ID" --format json --output "$TRIVY_OUTPUT"
-
-      #     # Upload to S3
-      #     aws s3 cp "$TRIVY_OUTPUT" "s3://aws-golden-ami-terraform-packer/$TRIVY_OUTPUT" --region "$AWS_REGION"
-
-      #     # Optional: run Inspector2 findigs query and upload
-      #     INSPECTOR_OUT="inspector-findings-${INSTANCE_ID}-$(date +%F_%T).json"
-      #     aws inspector2 list-findings \
-      #       --filter-criteria "{\"resourceId\":[{\"comparison\":\"EQUALS\",\"value\":\"${INSTANCE_ID}\"}]}" \
-      #       --output json > "$INSPECTOR_OUT" || true
-      #     aws s3 cp "$INSPECTOR_OUT" "s3://aws-golden-ami-terraform-packer/$INSPECTOR_OUT" --region "$AWS_REGION" || true
-
-      #     # Slack & email notifications (uncomment if required)
-      #     # curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"Trivy and Inspector reports uploaded for AMI $AMI_ID\"}" "${{vars.SLACK_WEBHOOK_URL}}"
-      #     # echo -e "From: kishore.vyr@gmail.com\nTo: hemasivakishore99@gmail.com\nSubject: Trivy report for $AMI_ID\n\nReports uploaded to S3" | msmtp hemasivakishore99@gmail.com
 
       - name: Creating EC2 Instance with Golden AMI via Terraform
         working-directory: Infrastructure
@@ -168,4 +112,29 @@ jobs:
             terraform validate
             terraform fmt -check
             terraform plan -var="ami=$AMI_ID" -out aws-golden-ami-plan-github-actions.tfplan
+            aws s3 cp aws-golden-ami-plan-github-actions.tfplan s3://aws-golden-ami-terraform-packer/aws-golden-ami-plan-github-actions.tfplan
             terraform apply --auto-approve aws-golden-ami-plan-github-actions.tfplan
+
+      - name: Scanning EC2 with AWS Inspector
+        run: |
+          set -e
+          AWS_REGION=us-east-1
+          export AWS_REGION AWS_DEFAULT_REGION=$AWS_REGION
+
+          INSTANCE_ID=$(aws ec2 describe-instances \
+            --filters "Name=image-id,Values=$AMI_ID" \
+            --query "Reservations[].Instances[].InstanceId" \
+            --region "AWS_REGION" -output text)
+          
+          if [ -z "$INSTANCE_ID" ] || [ "$INSTANCE_ID" = "None" ]; then
+            echo "ERROR: No EC2 Instance found for AMI $AMI_ID; aborting
+            exit 1
+          fi
+
+          echo "Found EC2 Instance: $INSTANCE_ID for AMI: $AMI_ID"
+
+          aws inspector2 list-findings   \
+          --filter-criteria '{"resourceId":[{"comparison":"EQUALS","value":"$INSTANCE_ID"}]}' \
+          --output json > ec2-github-actions.json
+
+          aws s3 cp ec2-github-actions.json s3://aws-golden-ami-terraform-packer/ec2-github-actions.json
