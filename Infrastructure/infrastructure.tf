@@ -7,7 +7,7 @@ terraform {
   }
   backend "s3" {
     bucket = "aws-golden-ami-terraform-packer"
-    key = "aws-golden-ami-backend"
+    key    = "aws-golden-ami-backend"
     region = "us-east-1"
   }
 }
@@ -16,6 +16,10 @@ provider "aws" {
   region = "us-east-1"
 }
 
+variable "ami" {
+  description = "The AMI ID to be used for the instances"
+  type        = string
+}
 
 module "golden-ami" {
   source                   = "git::https://github.com/hemasivakishore/aws-golden-ami-terraform-packer.git//modules/vpc?ref=main"
@@ -32,7 +36,7 @@ module "golden-ami" {
   availability_zone        = "us-east-1a"
   private_route_table_name = "golden-private-route-table"
   service_ports            = [22, 80, 443, 3389, 445, 8080]
-  ami                      = "ami-0ecb62995f68bb549"
+  ami                      = var.ami
   aws_region               = "us-east-1"
   key_name                 = "vhsk"
 }

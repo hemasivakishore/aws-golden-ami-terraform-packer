@@ -61,11 +61,11 @@ jobs:
       #       terraform apply --var="ami=$AMI_ID" aws-golden-ami-plan-github-actions.tfplan
 
 
-      - name: Build Golden AMI with Packer
-        working-directory: packer-golden-image
-        run: |
-          packer validate -var-file=variables-packer-golden-ami.json packer-golden-ami.json
-          packer build -var-file=variables-packer-golden-ami.json packer-golden-ami.json
+      # - name: Build Golden AMI with Packer
+      #   working-directory: packer-golden-image
+      #   run: |
+      #     packer validate -var-file=variables-packer-golden-ami.json packer-golden-ami.json
+      #     packer build -var-file=variables-packer-golden-ami.json packer-golden-ami.json
 
       - name: Locate latest AMI and export AMI_ID
         run: |
