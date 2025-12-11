@@ -51,25 +51,25 @@ jobs:
           # Persist for next steps
           echo "AMI_ID=$AMI_ID" >> $GITHUB_ENV
       
-      # - name: Trivy Scan AMI
-      #   run: |
-      #     set -e
-      #     AWS_REGION=us-east-1
-      #     export AWS_REGION AWS_DEFAULT_REGION=$AWS_REGION
+      - name: Trivy Scan AMI
+        run: |
+          set -e
+          AWS_REGION=us-east-1
+          export AWS_REGION AWS_DEFAULT_REGION=$AWS_REGION
 
-      #     echo "Scanning AMI_ID=$AMI_ID with Trivy"
-      #     trivy vm --scanners vuln ami:$AMI_ID \
-      #       --aws-region="$AWS_REGION" \
-      #       --timeout 60m \
-      #       --format table --output trivy-ami-github-actions.txt
+          echo "Scanning AMI_ID=$AMI_ID with Trivy"
+          trivy vm --scanners vuln ami:$AMI_ID \
+            --aws-region="$AWS_REGION" \
+            --timeout 60m \
+            --format table --output trivy-ami-github-actions.txt
       
-      # - name: Upload Trivy Scan Report to S3
-      #   run: |
-      #     set -e
-      #     AWS_REGION=us-east-1
-      #     export AWS_REGION AWS_DEFAULT_REGION=$AWS_REGION
+      - name: Upload Trivy Scan Report to S3
+        run: |
+          set -e
+          AWS_REGION=us-east-1
+          export AWS_REGION AWS_DEFAULT_REGION=$AWS_REGION
 
-      #     aws s3 cp trivy-ami-github-actions.txt s3://aws-golden-ami-terraform-packer/trivy-ami-github-actions.txt
+          aws s3 cp trivy-ami-github-actions.txt s3://aws-golden-ami-terraform-packer/trivy-ami-github-actions.txt
 
 
       - name: Creating EC2 Instance with Golden AMI via Terraform
@@ -79,13 +79,13 @@ jobs:
         run: |
             set -euxo pipefail
             echo "Using AMI_ID=$AMI_ID for Terraform"
-            # terraform init
-            # terraform validate
-            # terraform fmt -check
-            # terraform plan -var="ami=$AMI_ID" -out aws-golden-ami-plan-github-actions.tfplan
-            # aws s3 cp aws-golden-ami-plan-github-actions.tfplan s3://aws-golden-ami-terraform-packer/aws-golden-ami-plan-github-actions.tfplan
-            # terraform apply --auto-approve aws-golden-ami-plan-github-actions.tfplan
-            terraform destroy -auto-approve -var="ami=$AMI_ID"
+            terraform init
+            terraform validate
+            terraform fmt -check
+            terraform plan -var="ami=$AMI_ID" -out aws-golden-ami-plan-github-actions.tfplan
+            aws s3 cp aws-golden-ami-plan-github-actions.tfplan s3://aws-golden-ami-terraform-packer/aws-golden-ami-plan-github-actions.tfplan
+            terraform apply --auto-approve aws-golden-ami-plan-github-actions.tfplan
+            # terraform destroy -auto-approve -var="ami=$AMI_ID"
 
       # - name: Scanning EC2 with AWS Inspector
       #   run: |
