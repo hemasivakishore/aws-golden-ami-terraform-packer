@@ -80,19 +80,32 @@ jobs:
           echo "Found AMI: $AMI_ID"
           # Persist for next steps
           echo "AMI_ID=$AMI_ID" >> $GITHUB_ENV
+      
+      - name: Download Trivy DB
+        run: trivy --download-db-only
 
-      - name: Trivy Scan AMI
+      - name: Scan AMI
         run: |
-          set -e
-          AWS_REGION=us-east-1
-          export AWS_REGION AWS_DEFAULT_REGION=$AWS_REGION
-
-          echo "Scanning AMI_ID=$AMI_ID with Trivy"
           trivy vm --scanners vuln ami:$AMI_ID \
-            --skip-java-db-update \
-            --aws-region="$AWS_REGION" \
-            --timeout 60m \
-            --format table --output trivy-ami-github-actions.txt
+          --aws-region="$AWS_REGION" \
+          --timeout 60m \
+          --format table \
+          --output trivy-ami-github-actions.txt
+
+
+
+      # - name: Trivy Scan AMI
+      #   run: |
+      #     set -e
+      #     AWS_REGION=us-east-1
+      #     export AWS_REGION AWS_DEFAULT_REGION=$AWS_REGION
+
+      #     echo "Scanning AMI_ID=$AMI_ID with Trivy"
+      #     trivy vm --scanners vuln ami:$AMI_ID \
+      #       --skip-java-db-update \
+      #       --aws-region="$AWS_REGION" \
+      #       --timeout 60m \
+      #       --format table --output trivy-ami-github-actions.txt
       
       - name: Upload Trivy Scan Report to S3
         run: |
