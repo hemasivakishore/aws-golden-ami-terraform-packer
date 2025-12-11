@@ -42,7 +42,7 @@ jobs:
           echo "AMI ID is: $AMI_ID"
           AMI_MESSAGE="AMI ID is $AMI_ID and created on date $(date)"
           echo $AMI_MESSAGE
-          trivy aws --region us-east-1 --service ec2 \
+          trivy aws --service ec2 \
             --resource-id $AMI_ID \
             --format json --output trivy-ami.json
           aws s3 cp trivy-ami.json s3://aws-golden-ami-terraform-packer/trivy-ami.json
