@@ -11,7 +11,7 @@ on:
 
 jobs:
   building-ami:
-    runs-on: golden-ami
+    runs-on: [self-hosted, linux, x64, golden-ami]
     steps:
       - uses: actions/checkout@v4
 
