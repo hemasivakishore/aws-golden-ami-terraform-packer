@@ -33,8 +33,8 @@ jobs:
       - name: Build Golden AMI with Packer
         working-directory: packer-golden-image
         run: |
-          packer validate packer-golden-ami.json
-          packer build packer-golden-ami.json
+          packer validate -var-file=variables-packer-golden-ami.json packer-golden-ami.json
+          packer build -var-file=variables-packer-golden-ami.json packer-golden-ami.json
       
       - name: Trivy Scan AMI
         run: |
