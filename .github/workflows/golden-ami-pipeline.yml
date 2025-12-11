@@ -38,7 +38,7 @@ jobs:
       
       - name: Trivy Scan AMI
         run: |
-          AMI_ID=$(aws ec2 describe-images --owners self --filters "Name=tag:Project,Values=aws-golden-ami" "Name=tag:Environment,Values=dev" "Name=tag:Owner,Values=VHSKISHORE" "Name=name,Values=golden-ami-*" --query "sort_by(Images, &CreationDate)[-1].ImageId" --region us-east-1  --output text)
+          AMI_ID=$(aws ec2 describe-images --owners self --filters "Name=tag:Project,Values=aws-golden-ami" "Name=name,Values=golden-ami-*" --query "sort_by(Images, &CreationDate)[-1].ImageId" --region us-east-1 --output text)
           AMI_MESSAGE="AMI ID is $AMI_ID on date $(date)"
           trivy aws --region us-east-1 --service ec2 \
             --resource-id $AMI_ID \
