@@ -33,13 +33,15 @@ jobs:
       - name: Build Golden AMI with Packer
         working-directory: packer-golden-image
         run: |
-          packer validate -var-file=variables-packer-golden-ami.json packer-golden-ami.json
-          packer build -var-file=variables-packer-golden-ami.json packer-golden-ami.json
+          # packer validate -var-file=variables-packer-golden-ami.json packer-golden-ami.json
+          # packer build -var-file=variables-packer-golden-ami.json packer-golden-ami.json
       
       - name: Trivy Scan AMI
         run: |
           AMI_ID=$(aws ec2 describe-images --owners self --filters "Name=tag:Project,Values=aws-golden-ami" "Name=name,Values=golden-ami-*" --query "sort_by(Images, &CreationDate)[-1].ImageId" --region us-east-1 --output text)
+          echo $AMI_ID
           AMI_MESSAGE="AMI ID is $AMI_ID on date $(date)"
+          echo $AMI_MESSAGE
           trivy aws --region us-east-1 --service ec2 \
             --resource-id $AMI_ID \
             --format json --output trivy-ami.json
