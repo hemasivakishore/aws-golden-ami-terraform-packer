@@ -58,11 +58,15 @@ jobs:
           echo "AMI_ID=$AMI_ID" >> $GITHUB_ENV
       
       - name: Send SLACK Notification for AMI Creation
-        if: always()
-        run: |
-          STATUS="${{ job.status }}"
-          curl -X POST -H "Content-type: application/json" \
-          --data "{\"text\":\"Golden AMI Pipeline ${STATUS} ✅\nAMI Created With AMI-ID: ${AMI_ID}\"}" ${{ secrets.SLACK_WEBHOOK_URL }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_CHANNEL: general
+          SLACK_COLOR: ${{ job.status }} # or a specific color like 'good' or '#ff00ff'
+          SLACK_ICON: https://github.com/rtCamp.png?size=48
+          SLACK_MESSAGE: 'Post Content :rocket:'
+          SLACK_TITLE: Post Title
+          SLACK_USERNAME: hemasivakishore
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
       
       # - name: Trivy Scan AMI
       #   run: |
