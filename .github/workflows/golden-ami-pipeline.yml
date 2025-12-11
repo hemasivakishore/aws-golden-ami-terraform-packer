@@ -73,7 +73,7 @@ jobs:
           curl -X POST -H "Content-type: application/json" \
             --data "{\"text\":\"${AMI_MESSAGE}\"}" \
             "$SLACK_WEBHOOK_URL"
-          echo -e "Subject:${{vars.SUBJECT}}\n\n${AMI_MESSAGE}" | msmtp ${TO}
+          echo -e "Subject:${{vars.SUBJECT}}\n\n${AMI_MESSAGE}" | msmtp ${{vars.TO}}
 
       
       # - name: Trivy Scan AMI
