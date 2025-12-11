@@ -11,7 +11,7 @@ on:
 
 jobs:
   building-ami:
-    runs-on: ubuntu-latest
+    runs-on: golden-ami
     steps:
       - uses: actions/checkout@v4
 
