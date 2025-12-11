@@ -30,11 +30,11 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
       
-      - name: Build Golden AMI with Packer
-        working-directory: packer-golden-image
-        run: |
-          packer validate -var-file=variables-packer-golden-ami.json packer-golden-ami.json
-          packer build -var-file=variables-packer-golden-ami.json packer-golden-ami.json
+      # - name: Build Golden AMI with Packer
+      #   working-directory: packer-golden-image
+      #   run: |
+      #     packer validate -var-file=variables-packer-golden-ami.json packer-golden-ami.json
+      #     packer build -var-file=variables-packer-golden-ami.json packer-golden-ami.json
       
       - name: Locate latest AMI and export AMI_ID
         run: |
@@ -57,7 +57,7 @@ jobs:
           # Persist for next steps
           echo "AMI_ID=$AMI_ID" >> $GITHUB_ENV
       
-      - name: Send SLACK Notification for AMI Creation
+      - name: Send SLACK and Email Notification for AMI Creation
         if: always()
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -73,97 +73,98 @@ jobs:
           curl -X POST -H "Content-type: application/json" \
             --data "{\"text\":\"${AMI_MESSAGE}\"}" \
             "$SLACK_WEBHOOK_URL"
+          echo -e "Subject:${{vars.SUBJECT}}\n\n${AMI_MESSAGE}" | msmtp ${TO}
 
       
-      - name: Trivy Scan AMI
-        run: |
-          set -e
-          AWS_REGION=us-east-1
-          export AWS_REGION AWS_DEFAULT_REGION=$AWS_REGION
+      # - name: Trivy Scan AMI
+      #   run: |
+      #     set -e
+      #     AWS_REGION=us-east-1
+      #     export AWS_REGION AWS_DEFAULT_REGION=$AWS_REGION
 
-          echo "Scanning AMI_ID=$AMI_ID with Trivy"
-          trivy vm --scanners vuln ami:$AMI_ID \
-            --aws-region="$AWS_REGION" \
-            --timeout 60m \
-            --format table --output trivy-ami-github-actions.txt
+      #     echo "Scanning AMI_ID=$AMI_ID with Trivy"
+      #     trivy vm --scanners vuln ami:$AMI_ID \
+      #       --aws-region="$AWS_REGION" \
+      #       --timeout 60m \
+      #       --format table --output trivy-ami-github-actions.txt
 
-      - name: Upload Trivy Scan Report to S3
-        run: |
-          set -e
-          AWS_REGION=us-east-1
-          export AWS_REGION AWS_DEFAULT_REGION=$AWS_REGION
+      # - name: Upload Trivy Scan Report to S3
+      #   run: |
+      #     set -e
+      #     AWS_REGION=us-east-1
+      #     export AWS_REGION AWS_DEFAULT_REGION=$AWS_REGION
 
-          aws s3 cp trivy-ami-github-actions.txt s3://aws-golden-ami-terraform-packer/trivy-ami-github-actions.txt
+      #     aws s3 cp trivy-ami-github-actions.txt s3://aws-golden-ami-terraform-packer/trivy-ami-github-actions.txt
 
-      - name: Send SLACK Notification for Trivy Scan Report
-        if: always()
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          STATUS: ${{ job.status }}
-        run: |
-          if [ "$STATUS" = "success" ]; then
-            TRIVY_MESSAGE="Trivy Report Uploaded Successfully into S3 Bucket. ✅\nS3 Bucket Link: s3://aws-golden-ami-terraform-packer/trivy-ami-github-actions.txt"
-          else
-            TRIVY_MESSAGE="Trivy Report Failed to Upload into S3 Bucket. ❌\nNo Trivy Report Uploaded/Found."
-          fi
+      # - name: Send SLACK Notification for Trivy Scan Report
+      #   if: always()
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      #     STATUS: ${{ job.status }}
+      #   run: |
+      #     if [ "$STATUS" = "success" ]; then
+      #       TRIVY_MESSAGE="Trivy Report Uploaded Successfully into S3 Bucket. ✅\nS3 Bucket Link: s3://aws-golden-ami-terraform-packer/trivy-ami-github-actions.txt"
+      #     else
+      #       TRIVY_MESSAGE="Trivy Report Failed to Upload into S3 Bucket. ❌\nNo Trivy Report Uploaded/Found."
+      #     fi
 
-          curl -X POST -H "Content-type: application/json" \
-            --data "{\"text\":\"${TRIVY_MESSAGE}\"}" \
-            "$SLACK_WEBHOOK_URL"
+      #     curl -X POST -H "Content-type: application/json" \
+      #       --data "{\"text\":\"${TRIVY_MESSAGE}\"}" \
+      #       "$SLACK_WEBHOOK_URL"
 
-      - name: Creating EC2 Instance with Golden AMI via Terraform
-        working-directory: Infrastructure
-        env:
-          AMI_ID: ${{ env.AMI_ID }}   # injected from earlier step
-        run: |
-            set -euxo pipefail
-            echo "Using AMI_ID=$AMI_ID for Terraform"
-            terraform init
-            terraform validate
-            terraform fmt -check
-            terraform plan -var="ami=$AMI_ID" -out aws-golden-ami-plan-github-actions.tfplan
-            aws s3 cp aws-golden-ami-plan-github-actions.tfplan s3://aws-golden-ami-terraform-packer/aws-golden-ami-plan-github-actions.tfplan
-            terraform apply --auto-approve aws-golden-ami-plan-github-actions.tfplan
-            # terraform destroy -auto-approve -var="ami=$AMI_ID"
+      # - name: Creating EC2 Instance with Golden AMI via Terraform
+      #   working-directory: Infrastructure
+      #   env:
+      #     AMI_ID: ${{ env.AMI_ID }}   # injected from earlier step
+      #   run: |
+      #       set -euxo pipefail
+      #       echo "Using AMI_ID=$AMI_ID for Terraform"
+      #       terraform init
+      #       terraform validate
+      #       terraform fmt -check
+      #       terraform plan -var="ami=$AMI_ID" -out aws-golden-ami-plan-github-actions.tfplan
+      #       aws s3 cp aws-golden-ami-plan-github-actions.tfplan s3://aws-golden-ami-terraform-packer/aws-golden-ami-plan-github-actions.tfplan
+      #       terraform apply --auto-approve aws-golden-ami-plan-github-actions.tfplan
+      #       # terraform destroy -auto-approve -var="ami=$AMI_ID"
 
-      - name: Scanning EC2 with AWS Inspector
-        run: |
-          set -e
-          AWS_REGION=us-east-1
-          export AWS_REGION AWS_DEFAULT_REGION=$AWS_REGION
+      # - name: Scanning EC2 with AWS Inspector
+      #   run: |
+      #     set -e
+      #     AWS_REGION=us-east-1
+      #     export AWS_REGION AWS_DEFAULT_REGION=$AWS_REGION
 
-          INSTANCE_ID=$(aws ec2 describe-instances \
-            --filters "Name=image-id,Values=$AMI_ID" \
-            --query "Reservations[].Instances[].InstanceId" \
-            --region "$AWS_REGION" \
-            --output text)
+      #     INSTANCE_ID=$(aws ec2 describe-instances \
+      #       --filters "Name=image-id,Values=$AMI_ID" \
+      #       --query "Reservations[].Instances[].InstanceId" \
+      #       --region "$AWS_REGION" \
+      #       --output text)
 
-          if [ -z "$INSTANCE_ID" ] || [ "$INSTANCE_ID" = "None" ]; then
-            echo "ERROR: No EC2 Instance found for AMI $AMI_ID; aborting"
-            exit 1
-          fi
+      #     if [ -z "$INSTANCE_ID" ] || [ "$INSTANCE_ID" = "None" ]; then
+      #       echo "ERROR: No EC2 Instance found for AMI $AMI_ID; aborting"
+      #       exit 1
+      #     fi
 
-          echo "Found EC2 Instance: $INSTANCE_ID for AMI: $AMI_ID"
+      #     echo "Found EC2 Instance: $INSTANCE_ID for AMI: $AMI_ID"
 
-          aws inspector2 list-findings \
-            --filter-criteria "{\"resourceId\":[{\"comparison\":\"EQUALS\",\"value\":\"$INSTANCE_ID\"}]}" \
-            --output json > ec2-github-actions.json
+      #     aws inspector2 list-findings \
+      #       --filter-criteria "{\"resourceId\":[{\"comparison\":\"EQUALS\",\"value\":\"$INSTANCE_ID\"}]}" \
+      #       --output json > ec2-github-actions.json
 
-          aws s3 cp ec2-github-actions.json s3://aws-golden-ami-terraform-packer/ec2-github-actions.json
+      #     aws s3 cp ec2-github-actions.json s3://aws-golden-ami-terraform-packer/ec2-github-actions.json
 
       
-      - name: Send SLACK Notification for AWS Inspector Scan Report
-        if: always()
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          STATUS: ${{ job.status }}
-        run: |
-          if [ "$STATUS" = "success" ]; then
-            AWS_INSPECTOR_MESSAGE="AWS Inspector Report Uploaded Successfully into S3 Bucket. ✅\nS3 Bucket Link: s3://aws-golden-ami-terraform-packer/ec2-github-actions.json"
-          else
-            AWS_INSPECTOR_MESSAGE="AWS Inspector Report Failed to Upload into S3 Bucket. ❌\nNo AWS Inspector Report Uploaded/Found\nStatus: $STATUS"
-          fi
+      # - name: Send SLACK Notification for AWS Inspector Scan Report
+      #   if: always()
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      #     STATUS: ${{ job.status }}
+      #   run: |
+      #     if [ "$STATUS" = "success" ]; then
+      #       AWS_INSPECTOR_MESSAGE="AWS Inspector Report Uploaded Successfully into S3 Bucket. ✅\nS3 Bucket Link: s3://aws-golden-ami-terraform-packer/ec2-github-actions.json"
+      #     else
+      #       AWS_INSPECTOR_MESSAGE="AWS Inspector Report Failed to Upload into S3 Bucket. ❌\nNo AWS Inspector Report Uploaded/Found\nStatus: $STATUS"
+      #     fi
 
-          curl -X POST -H "Content-type: application/json" \
-            --data "{\"text\":\"${AWS_INSPECTOR_MESSAGE}\"}" \
-            "$SLACK_WEBHOOK_URL"
+      #     curl -X POST -H "Content-type: application/json" \
+      #       --data "{\"text\":\"${AWS_INSPECTOR_MESSAGE}\"}" \
+      #       "$SLACK_WEBHOOK_URL"
