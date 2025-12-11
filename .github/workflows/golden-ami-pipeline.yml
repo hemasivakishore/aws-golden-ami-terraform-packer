@@ -20,6 +20,7 @@ jobs:
           terraform version
           packer version
           trivy version
+          packer plugins install github.com/hashicorp/amazon
           pwd
 
       - name: Configure AWS
