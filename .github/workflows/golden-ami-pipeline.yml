@@ -20,6 +20,7 @@ jobs:
           terraform version
           packer version
           trivy version
+          pwd
 
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
