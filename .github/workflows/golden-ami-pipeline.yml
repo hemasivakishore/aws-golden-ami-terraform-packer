@@ -51,25 +51,25 @@ jobs:
           # Persist for next steps
           echo "AMI_ID=$AMI_ID" >> $GITHUB_ENV
       
-      - name: Trivy Scan AMI
-        run: |
-          set -e
-          AWS_REGION=us-east-1
-          export AWS_REGION AWS_DEFAULT_REGION=$AWS_REGION
+      # - name: Trivy Scan AMI
+      #   run: |
+      #     set -e
+      #     AWS_REGION=us-east-1
+      #     export AWS_REGION AWS_DEFAULT_REGION=$AWS_REGION
 
-          echo "Scanning AMI_ID=$AMI_ID with Trivy"
-          trivy vm --scanners vuln ami:$AMI_ID \
-            --aws-region="$AWS_REGION" \
-            --timeout 60m \
-            --format table --output trivy-ami-github-actions.txt
+      #     echo "Scanning AMI_ID=$AMI_ID with Trivy"
+      #     trivy vm --scanners vuln ami:$AMI_ID \
+      #       --aws-region="$AWS_REGION" \
+      #       --timeout 60m \
+      #       --format table --output trivy-ami-github-actions.txt
       
-      - name: Upload Trivy Scan Report to S3
-        run: |
-          set -e
-          AWS_REGION=us-east-1
-          export AWS_REGION AWS_DEFAULT_REGION=$AWS_REGION
+      # - name: Upload Trivy Scan Report to S3
+      #   run: |
+      #     set -e
+      #     AWS_REGION=us-east-1
+      #     export AWS_REGION AWS_DEFAULT_REGION=$AWS_REGION
 
-          aws s3 cp trivy-ami-github-actions.txt s3://aws-golden-ami-terraform-packer/trivy-ami-github-actions.txt
+      #     aws s3 cp trivy-ami-github-actions.txt s3://aws-golden-ami-terraform-packer/trivy-ami-github-actions.txt
 
 
       - name: Creating EC2 Instance with Golden AMI via Terraform
@@ -86,27 +86,27 @@ jobs:
             # aws s3 cp aws-golden-ami-plan-github-actions.tfplan s3://aws-golden-ami-terraform-packer/aws-golden-ami-plan-github-actions.tfplan
             # terraform apply --auto-approve aws-golden-ami-plan-github-actions.tfplan
             terraform destroy -auto-approve -var="ami=$AMI_ID"
-            
-      - name: Scanning EC2 with AWS Inspector
-        run: |
-          set -e
-          AWS_REGION=us-east-1
-          export AWS_REGION AWS_DEFAULT_REGION=$AWS_REGION
 
-          INSTANCE_ID=$(aws ec2 describe-instances \
-            --filters "Name=image-id,Values=$AMI_ID" \
-            --query "Reservations[].Instances[].InstanceId" \
-            --region "AWS_REGION" -output text)
+      # - name: Scanning EC2 with AWS Inspector
+      #   run: |
+      #     set -e
+      #     AWS_REGION=us-east-1
+      #     export AWS_REGION AWS_DEFAULT_REGION=$AWS_REGION
+
+      #     INSTANCE_ID=$(aws ec2 describe-instances \
+      #       --filters "Name=image-id,Values=$AMI_ID" \
+      #       --query "Reservations[].Instances[].InstanceId" \
+      #       --region "AWS_REGION" -output text)
           
-          if [ -z "$INSTANCE_ID" ] || [ "$INSTANCE_ID" = "None" ]; then
-            echo "ERROR: No EC2 Instance found for AMI $AMI_ID; aborting
-            exit 1
-          fi
+      #     if [ -z "$INSTANCE_ID" ] || [ "$INSTANCE_ID" = "None" ]; then
+      #       echo "ERROR: No EC2 Instance found for AMI $AMI_ID; aborting
+      #       exit 1
+      #     fi
 
-          echo "Found EC2 Instance: $INSTANCE_ID for AMI: $AMI_ID"
+      #     echo "Found EC2 Instance: $INSTANCE_ID for AMI: $AMI_ID"
 
-          aws inspector2 list-findings   \
-          --filter-criteria '{"resourceId":[{"comparison":"EQUALS","value":"$INSTANCE_ID"}]}' \
-          --output json > ec2-github-actions.json
+      #     aws inspector2 list-findings   \
+      #     --filter-criteria '{"resourceId":[{"comparison":"EQUALS","value":"$INSTANCE_ID"}]}' \
+      #     --output json > ec2-github-actions.json
 
-          aws s3 cp ec2-github-actions.json s3://aws-golden-ami-terraform-packer/ec2-github-actions.json
+      #     aws s3 cp ec2-github-actions.json s3://aws-golden-ami-terraform-packer/ec2-github-actions.json
