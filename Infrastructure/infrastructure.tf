@@ -5,11 +5,17 @@ terraform {
       version = "6.26.0"
     }
   }
+  backend "s3" {
+    bucket = "aws-golden-ami-terraform-packer"
+    key = "aws-golden-ami-backend"
+    region = "us-east-1"
+  }
 }
 
 provider "aws" {
   region = "us-east-1"
 }
+
 
 module "golden-ami" {
   source                   = "git::https://github.com/hemasivakishore/aws-golden-ami-terraform-packer.git//modules/vpc?ref=main"

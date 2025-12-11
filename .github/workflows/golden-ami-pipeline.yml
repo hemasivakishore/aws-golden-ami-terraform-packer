@@ -1,36 +1,41 @@
-# This is a basic workflow to help you get started with Actions
+name: AWS Golden AMI
 
-name: CI
-
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
+
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  building-ami:
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
 
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      - name: Build Golden AMI with Packer
+        working-directory: packer-golden-image
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          packer validate packer-golden-ami.json
+          packer build packer-golden-ami.json
+      
+      - name: Trivy Scan AMI
+        run: |
+          AMI_ID=$(aws ec2 describe-images --owners self --filters "Name=tag:Project,Values=aws-golden-ami" "Name=tag:Environment,Values=dev" "Name=tag:Owner,Values=VHSKISHORE" "Name=name,Values=golden-ami-*" --query "sort_by(Images, &CreationDate)[-1].ImageId" --region us-east-1  --output text)
+          AMI_MESSAGE="AMI ID is $AMI_ID on date $(date)"
+          trivy aws --region us-east-1 --service ec2 \
+            --resource-id $AMI_ID \
+            --format json --output trivy-ami.json
+          aws s3 cp trivy-ami.json s3://aws-golden-ami-terraform-packer/trivy-ami.json
+          curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"${AMI_MESSAGE//$'\n'/\\n}\"}" "${{vars.SLACK_WEBHOOK_URL}}"
+          echo -e "From: ${{vars.FROM}}\nTo: ${{vars.TO}}\nSubject: ${{vars.SUBJECT}}\n\n${AMI_MESSAGE}" | msmtp ${{vars.TO}}
+
