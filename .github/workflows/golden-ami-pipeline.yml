@@ -90,6 +90,7 @@ jobs:
           echo "Scanning AMI_ID=$AMI_ID with Trivy"
           trivy vm --scanners vuln ami:$AMI_ID \
             --aws-region="$AWS_REGION" \
+            --timeout 60m \
             --format table --output trivy-ami-github-actions.txt
       
       - name: Upload Trivy Scan Report to S3
