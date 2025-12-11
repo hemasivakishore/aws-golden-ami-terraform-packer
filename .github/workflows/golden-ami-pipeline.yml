@@ -41,6 +41,8 @@ jobs:
           AMI_ID=$(aws ec2 describe-images --owners self --filters "Name=tag:Project,Values=aws-golden-ami" "Name=name,Values=golden-ami-*" --query "sort_by(Images, &CreationDate)[-1].ImageId" --region us-east-1 --output text)
           echo "AMI ID is: $AMI_ID"
           AMI_MESSAGE="AMI ID is $AMI_ID and created on date $(date)"
+          curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"${AMI_MESSAGE//$'\n'/\\n}\"}" "${{vars.SLACK_WEBHOOK_URL}}"
+          echo -e "From: ${{vars.FROM}}\nTo: ${{vars.TO}}\nSubject: ${{vars.SUBJECT}}\n\n${AMI_MESSAGE}" | msmtp ${{vars.TO}}
           echo $AMI_MESSAGE
           trivy aws --service ec2 \
             --resource-id $AMI_ID \
