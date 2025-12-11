@@ -62,7 +62,7 @@ jobs:
         run: |
           STATUS="${{ job.status }}"
           curl -X POST -H "Content-type: application/json" \
-          --data "{\"text\":\"Golden AMI Pipeline ${STATUS} ✅\nWith AMI-ID: ${AMI_ID}\"}" ${{ secrets.SLACK_WEBHOOK_URL }}
+          --data "{\"text\":\"Golden AMI Pipeline ${STATUS} ✅\nAMI Created With AMI-ID: ${AMI_ID}\"}" ${{ secrets.SLACK_WEBHOOK_URL }}
       
       # - name: Trivy Scan AMI
       #   run: |
