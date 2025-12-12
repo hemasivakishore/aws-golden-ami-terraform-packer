@@ -1,77 +1,93 @@
 {
-    "_comment": "Creating Golden AMI image in AWS",
-    "variables": {
-        "region": "",
-        "source_ami": "",
-        "instance_type": "",
-        "vpc_id": "",
-        "subnet_id": ""
+  "_comment": "Creating Golden AMI image in AWS",
+  "variables": {
+    "region": "",
+    "source_ami": "",
+    "instance_type": "",
+    "vpc_id": "",
+    "subnet_id": ""
+  },
+
+  "builders": [
+    {
+      "type": "amazon-ebs",
+      "ami_name": "golden-ami-{{timestamp}}",
+      "region": "{{user `region`}}",
+
+      "source_ami_filter": {
+        "filters": {
+          "virtualization-type": "hvm",
+          "name": "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*",
+          "root-device-type": "ebs"
+        },
+        "owners": ["099720109477"],
+        "most_recent": true
+      },
+
+      "instance_type": "{{user `instance_type`}}",
+      "ssh_username": "ubuntu",
+
+      "vpc_id": "{{user `vpc_id`}}",
+      "subnet_id": "{{user `subnet_id`}}",
+      "associate_public_ip_address": true,
+
+      "tags": {
+        "Name": "golden-ami-{{timestamp}}",
+        "Owner": "VHS-KISHORE",
+        "Project": "aws-golden-ami",
+        "Environment": "dev"
+      }
+    }
+  ],
+
+  "provisioners": [
+    {
+      "type": "shell",
+      "inline": [
+        "echo 'Updating packages...'",
+        "sudo apt update -y",
+
+        "echo 'Installing required packages (nginx, net-tools, jq, unzip, iputils-ping)...'",
+        "sudo DEBIAN_FRONTEND=noninteractive apt install -y nginx net-tools unzip iputils-ping jq",
+
+        "echo 'Reloading systemd...'",
+        "sudo systemctl daemon-reload",
+
+        "echo 'Enabling and starting nginx...'",
+        "sudo systemctl enable --now nginx || true"
+      ]
     },
-    "builders": [
-        {
-            "type": "amazon-ebs",
-            "ami_name": "golden-ami-{{timestamp}}",
-            "region": "{{user `region`}}",
 
-            "source_ami_filter": {
-                "filters": {
-                    "virtualization-type": "hvm",
-                    "name": "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20251022",
-                    "root-device-type": "ebs"
-                },
-                "owners": ["099720109477"],
-                "most_recent": true
-            },
-            "instance_type": "{{user `instance_type`}}",
-            "ssh_username": "ubuntu",
+    {
+      "type": "file",
+      "source": "../Infrastructure/scripts/ec2-startup-script.sh",
+      "destination": "/tmp/ec2-startup-script.sh"
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "sudo mv /tmp/ec2-startup-script.sh /usr/local/bin/ec2-startup-script.sh",
+        "sudo chmod +x /usr/local/bin/ec2-startup-script.sh"
+      ]
+    },
 
-            "vpc_id": "{{user `vpc_id`}}",
-            "subnet_id": "{{user `subnet_id`}}",
-            "associate_public_ip_address": true,
+    {
+      "type": "file",
+      "source": "../Infrastructure/scripts/ec2-startup.service",
+      "destination": "/tmp/ec2-startup.service"
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "sudo mv /tmp/ec2-startup.service /etc/systemd/system/ec2-startup.service",
+        "sudo chmod 644 /etc/systemd/system/ec2-startup.service",
 
-            "tags": {
-                "Name": "golden-ami-{{timestamp}}",
-                "Owner": "VHS-KISHORE",
-                "Project": "aws-golden-ami",
-                "Environment": "dev"
-            }
-        }
-    ],
-    "provisioners": [
-        {
-            "type": "shell",
-            "inline": [
-                "sudo apt update",
-                "sudo apt install -y nginx net-tools unzip iputils-ping jq",
-                "systemctl enable nginx",
-                "systemctl start nginx"
-            ]
-        },
-        {
-            "type": "file",
-            "source": "../Infrastructure/scripts/ec2-startup-script.sh",
-            "destination": "/tmp/ec2-startup-script.sh"
-        },
-        {
-            "type": "shell",
-            "inline": [
-                "sudo mv /tmp/ec2-startup-script.sh /usr/local/bin/ec2-startup-script.sh",
-                "sudo chmod +x /usr/local/bin/ec2-startup-script.sh"
-            ]
-        },
-        {
-            "type": "file",
-            "source": "../Infrastructure/scripts/ec2-startup.service",
-            "destination": "/tmp/ec2-startup.service"
-        },
-        {
-            "type": "shell",
-            "inline": [
-                "sudo mv /tmp/ec2-startup.service /etc/systemd/system/ec2-startup.service",
-                "sudo chmod 644 /etc/systemd/system/ec2-startup.service",
-                "sudo systemctl daemon-reload",
-                "sudo systemctl enable ec2-startup.service"
-            ]
-        }
-    ]
+        "echo 'Reloading systemd daemon...'",
+        "sudo systemctl daemon-reload",
+
+        "echo 'Enabling ec2-startup.service...'",
+        "sudo systemctl enable ec2-startup.service || true"
+      ]
+    }
+  ]
 }
