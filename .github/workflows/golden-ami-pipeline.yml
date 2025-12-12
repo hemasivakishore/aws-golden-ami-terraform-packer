@@ -23,19 +23,6 @@ jobs:
           packer plugins install github.com/hashicorp/amazon
           pwd
       
-      - name: Debug working Directory
-        run: |
-          echo "PWD"
-          pwd
-          echo "list current folder: "
-          ls -al
-          echo "List Parent Folder: "
-          ls -la ..
-          echo "List Scripts folder (Relative): "
-          ls -R ../scripts || echo "Scripts folder not Found"
-          echo "Tree Command"
-          tree
-
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
