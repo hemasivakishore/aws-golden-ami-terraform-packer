@@ -128,6 +128,24 @@ jobs:
             terraform apply --auto-approve aws-golden-ami-plan-github-actions.tfplan
             # terraform destroy -auto-approve -var="ami=$AMI_ID"
 
+      - name: Send SLACK and Email Notification for tfplan
+        if: always()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          AMI_ID: ${{ env.AMI_ID }}
+          STATUS: ${{ job.status }}
+        run: |
+          if [ "$STATUS" = "success" ]; then
+            TFPLAN_MESSAGE="Golden AMI Pipeline SUCCESS ✅\nTFPLAN uploaded to S3 Bucket: s3://aws-golden-ami-terraform-packer/aws-golden-ami-plan-github-actions.tfplan"
+          else
+            TFPLAN_MESSAGE="Golden AMI Pipeline FAILED ❌\nTFPLAN Failed to Upload"
+          fi
+
+          curl -X POST -H "Content-type: application/json" \
+            --data "{\"text\":\"${TFPLAN_MESSAGE}\"}" \
+            "$SLACK_WEBHOOK_URL"
+          echo -e "Subject:${{vars.SUBJECT}}\n\n${TFPLAN_MESSAGE}" | msmtp ${{vars.TO}}
+
       - name: Scanning EC2 with AWS Inspector
         run: |
           set -e

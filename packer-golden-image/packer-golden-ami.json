@@ -42,7 +42,35 @@
             "type": "shell",
             "inline": [
                 "sudo apt update",
-                "sudo apt install -y nginx net-tools unzip iputils-ping jq"
+                "sudo apt install -y nginx net-tools unzip iputils-ping jq",
+                "systemctl enable nginx",
+                "systemctl start nginx"
+            ]
+        },
+        {
+            "type": "file",
+            "source": "../scripts/ec2-startup-script.sh",
+            "destination": "/tmp/ec2-startup-script.sh"
+        },
+        {
+            "type": "shell",
+            "inline": [
+                "sudo mv /tmp/ec2-startup-script.sh /usr/local/bin/ec2-startup-script.sh",
+                "sudo chmod +x /usr/local/bin/ec2-startup-script.sh"
+            ]
+        },
+        {
+            "type": "file",
+            "sourcee": "../scripts/ec2-startup.service",
+            "destination": "/tmp/ec2-startup.service"
+        },
+        {
+            "type": "shell",
+            "inline": [
+                "sudo mv /tmp/ec2-startup.service /etc/systemd/system/ec2-startup.service",
+                "sudo chmod 644 /etc/systemd/system/ec2-startup.service",
+                "sudo systemctl daemon-reload",
+                "sudo systemctl enable ec2-startup.service"
             ]
         }
     ]

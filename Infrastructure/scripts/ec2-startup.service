@@ -1,0 +1,11 @@
+[Unit]
+Description=Run EC2 startup script
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/ec2-startup-script.sh
+RemainAfterExit=true
+
+[Install]
+WantedBy=multi-user.target
