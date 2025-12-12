@@ -61,7 +61,7 @@
         },
         {
             "type": "file",
-            "sourcee": "../Infrastructure/scripts/ec2-startup.service",
+            "source": "../Infrastructure/scripts/ec2-startup.service",
             "destination": "/tmp/ec2-startup.service"
         },
         {
